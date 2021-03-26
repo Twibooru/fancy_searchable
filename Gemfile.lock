@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     fancy_searchable (0.1.0)
-      activesupport (= 6.0)
+      activesupport (~> 6.0)
       elasticsearch-model (= 7.0)
 
 GEM
