@@ -1,40 +1,20 @@
 # frozen_string_literal: true
 
+require 'active_support/all'
+
 module FancySearchable
   module RelativeDateParser
-    extend self
+    module_function
 
-    def parse(str)
+    def parse(str, origin = Time.now)
       str = str.squish
-      return unless str =~ /\A(\d+) (second|minute|hour|day|week|month|year)s? ago\z/
+      return unless str =~ /\A(\d+) (second|minute|hour|day|week|fortnight|month|year)s? ago\z/
 
       num = Regexp.last_match(1).to_i
+      unit = Regexp.last_match(2)
 
-      case Regexp.last_match(2)
-      when 'second'
-        higher = num.seconds.ago
-        lower  = higher - 1.second
-      when 'minute'
-        higher = num.minutes.ago
-        lower  = higher - 1.minute
-      when 'hour'
-        higher = num.hours.ago
-        lower  = higher - 1.hour
-      when 'day'
-        higher = num.days.ago
-        lower  = higher - 1.day
-      when 'week'
-        higher = num.weeks.ago
-        lower  = higher - 1.week
-      when 'month'
-        higher = num.months.ago
-        lower  = higher - 1.month
-      when 'year'
-        higher = num.years.ago
-        lower  = higher - 1.year
-      else
-        return nil # can never get here
-      end
+      higher = num.send(unit).ago(origin)
+      lower = higher - 1.send(unit)
 
       [higher, lower]
     end

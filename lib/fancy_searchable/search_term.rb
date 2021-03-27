@@ -1,3 +1,5 @@
+require_relative 'relative_date_parser'
+
 module FancySearchable
   class SearchTerm
     attr_accessor :term, :float_fields, :literal_fields, :int_fields
