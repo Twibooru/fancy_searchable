@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-
 module FancySearchable
-  VERSION = '0.1.3'
+  class SearchParsingError < StandardError
+  end
 end

@@ -2,8 +2,9 @@
 
 require 'active_support/all'
 require 'time'
-require_relative 'relative_date_parser'
 require_relative 'search_term'
+require_relative 'search_parsing_error'
+require_relative 'relative_date_parser'
 
 module FancySearchable
   class SearchParser
@@ -298,8 +299,5 @@ module FancySearchable
 
       token_stack
     end
-  end
-
-  class SearchParsingError < StandardError
   end
 end
