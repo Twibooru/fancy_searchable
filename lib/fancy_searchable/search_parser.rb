@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
+require 'active_support/all'
 require 'time'
-require 'relative_date_parser'
+require_relative 'relative_date_parser'
+require_relative 'search_term'
 
 module FancySearchable
   class SearchParser

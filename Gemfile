@@ -7,8 +7,10 @@ gemspec
 
 gem 'rake', '~> 13.0'
 
-gem 'minitest', '~> 5.0'
-
 group :test do
   gem 'rubocop'
+end
+
+group :test, :development do
+  gem 'rspec'
 end

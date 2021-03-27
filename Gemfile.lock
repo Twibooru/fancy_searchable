@@ -2,26 +2,27 @@ PATH
   remote: .
   specs:
     fancy_searchable (0.1.0)
-      activesupport (~> 6.0)
-      elasticsearch-model (= 7.0)
+      activesupport (~> 6.0.3.5)
+      elasticsearch-model (~> 7.1.1)
 
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (6.0.0)
+    activesupport (6.0.3.6)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 0.7, < 2)
       minitest (~> 5.1)
       tzinfo (~> 1.1)
-      zeitwerk (~> 2.1, >= 2.1.8)
+      zeitwerk (~> 2.2, >= 2.2.2)
     ast (2.4.2)
     concurrent-ruby (1.1.8)
+    diff-lcs (1.4.4)
     elasticsearch (7.12.0)
       elasticsearch-api (= 7.12.0)
       elasticsearch-transport (= 7.12.0)
     elasticsearch-api (7.12.0)
       multi_json
-    elasticsearch-model (7.0.0)
+    elasticsearch-model (7.1.1)
       activesupport (> 3)
       elasticsearch (> 1)
       hashie
@@ -46,6 +47,19 @@ GEM
     rake (13.0.3)
     regexp_parser (2.1.1)
     rexml (3.2.4)
+    rspec (3.10.0)
+      rspec-core (~> 3.10.0)
+      rspec-expectations (~> 3.10.0)
+      rspec-mocks (~> 3.10.0)
+    rspec-core (3.10.1)
+      rspec-support (~> 3.10.0)
+    rspec-expectations (3.10.1)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.10.0)
+    rspec-mocks (3.10.2)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.10.0)
+    rspec-support (3.10.2)
     rubocop (1.12.0)
       parallel (~> 1.10)
       parser (>= 3.0.0.0)
@@ -72,6 +86,7 @@ DEPENDENCIES
   fancy_searchable!
   minitest (~> 5.0)
   rake (~> 13.0)
+  rspec
   rubocop
 
 BUNDLED WITH
