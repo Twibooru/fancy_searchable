@@ -5,7 +5,7 @@ require_relative 'lib/fancy_searchable/version'
 Gem::Specification.new do |spec|
   spec.name          = 'fancy_searchable'
   spec.version       = FancySearchable::VERSION
-  spec.authors       = %w[AppleDash byte[]]
+  spec.authors       = %w[AppleDash byte[] K_A]
   spec.email         = ['pet@feather.horse']
 
   spec.summary       = 'A somewhat useful search parser to generate ElasticSearch queries.'
