@@ -2,8 +2,7 @@ require_relative 'relative_date_parser'
 
 module FancySearchable
   class SearchTerm
-    attr_accessor :term, :float_fields, :literal_fields, :int_fields
-    attr_accessor :ngram_fields, :boost, :fuzz
+    attr_accessor :term, :float_fields, :literal_fields, :int_fields, :ngram_fields, :boost, :fuzz
     attr_reader :wildcarded, :ngram_query
 
     def initialize(term, default_field, options = {})
@@ -61,7 +60,7 @@ module FancySearchable
               "\"#{val}\" is invalid."
         end
       elsif @boolean_fields.include?(field_name)
-        if !%w[true false].include?(val)
+        unless %w[true false].include?(val)
           raise SearchParsingError,
                 "Values of \"#{field_name}\" must be \"true\" or \"false\"; " \
               "\"#{val}\" is invalid."
@@ -124,7 +123,7 @@ module FancySearchable
         end
 
         # Calculate the limits of the required query.
-        if !err
+        unless err
           begin
             if timezone.nil?
               lower = Time.utc(*time_data)
@@ -235,7 +234,7 @@ module FancySearchable
 
     def parse
       wildcardable = !/^"([^"]|\\")+"$/.match(term)
-      @term = @term.slice(1, @term.size - 2) if !wildcardable
+      @term = @term.slice(1, @term.size - 2) unless wildcardable
 
       field = nil
       field, value = _escape_colons if @term.include? ':'
@@ -251,7 +250,7 @@ module FancySearchable
       extra = {}
 
       # Parse boosting parameter.
-      extra[:boost] = @boost.to_f if !@boost.nil?
+      extra[:boost] = @boost.to_f unless @boost.nil?
 
       if value.is_a? Hash
         return { range: { field => value.merge(extra) } }

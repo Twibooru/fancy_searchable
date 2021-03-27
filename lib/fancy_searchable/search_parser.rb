@@ -7,7 +7,7 @@ require_relative 'search_term'
 
 module FancySearchable
   class SearchParser
-    attr_reader :search_str, :requires_query
+    attr_reader :search_str, :requires_query, :allowed_fields
 
     TOKEN_LIST = [
       [:fuzz, /^~(?:\d+(\.\d+)?|\.\d+)/],
@@ -41,8 +41,6 @@ module FancySearchable
       @parsed = _parse
     end
 
-    attr_reader :allowed_fields
-
     def _bool_to_es_op(operator)
       if operator == :and_op
         :must
@@ -70,7 +68,7 @@ module FancySearchable
           bool_stack.push op
         end
       end
-      query[bool] = bool_stack if !bool_stack.empty?
+      query[bool] = bool_stack unless bool_stack.empty?
 
       # Negation of the AST Hash.
       if negate
@@ -119,9 +117,8 @@ module FancySearchable
       else
         negate = op[1]
         exp = op[2]
-        return { bool: { must_not: [exp] } } if negate
 
-        return exp
+        negate ? { bool: { must_not: [exp] } } : exp
       end
     end
 
@@ -173,7 +170,7 @@ module FancySearchable
 
           # Add the current search term to the stack once we have reached
           # another operator.
-          if ([:and_op, :or_op].include? symbol) || (
+          if (%i[and_op or_op].include? symbol) || (
             symbol == :rparen && lparen_in_term == 0)
             if search_term
               # Set options data.
@@ -198,7 +195,7 @@ module FancySearchable
             token_stack.push(ops.shift) while ops[0] == :and_op
             ops.unshift :and_op
           when :or_op
-            token_stack.push(ops.shift) while [:and_op, :or_op].include?(ops[0])
+            token_stack.push(ops.shift) while %i[and_op or_op].include?(ops[0])
             ops.unshift :or_op
           when :not_op
             if search_term
@@ -235,7 +232,7 @@ module FancySearchable
                 end
                 token_stack.push op
               end
-              raise SearchParsingError, 'Imbalanced parentheses.' if !balanced
+              raise SearchParsingError, 'Imbalanced parentheses.' unless balanced
 
               token_stack.push :not_op if group_negate.pop
             end
@@ -295,7 +292,7 @@ module FancySearchable
       end
       token_stack.push(:not_op) if negate
 
-      raise SearchParsingError, 'Imbalanced parentheses.' if ops.any? { |x| [:rparen, :lparen].include?(x) }
+      raise SearchParsingError, 'Imbalanced parentheses.' if ops.any? { |x| %i[rparen lparen].include?(x) }
 
       token_stack.concat ops
 
