@@ -112,7 +112,7 @@ module FancySearchable
               }
             end
           }
-        end.inject(&:merge)
+        end.inject({}, &:merge)
 
         field_transforms(options).merge(nested_transforms)
       end
