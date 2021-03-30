@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require_relative 'search_parser'
+require 'active_support/concern'
 
 module FancySearchable
   module Searchable
@@ -61,14 +62,20 @@ module FancySearchable
       def get_field_type_map(allowed_fields)
         field_type_map = { literal: [], float: [], full_text: [],
                            date: [], integer: [], ip: [], boolean: [] }
+
         allowed_fields.each do |field|
-          trufield = field_aliases.key?(field) ? field_aliases[field] : field
-          mapping = index_fields_mapping[trufield]
+          mapping = if field_aliases.key?(field)
+                      index_fields_mapping[field_aliases[field]]
+                    elsif nested_field_transforms.key?(field)
+                      index_fields_mapping[nested_field_transforms[field]][:properties][field]
+                    else
+                      index_fields_mapping[field]
+                    end
+
           dtype = mapping && mapping[:type]&.to_sym
-          # Index mapping for search field missing.
-          if dtype.nil?
-            field_type_map[:literal].push field
-          elsif dtype == :keyword
+
+          # Index mapping for search field missing, assume it's a literal.
+          if dtype.nil? || dtype == :keyword
             field_type_map[:literal].push field
           elsif dtype == :boolean
             field_type_map[:boolean].push field
@@ -84,6 +91,7 @@ module FancySearchable
             field_type_map[:float].push field
           end
         end
+
         field_type_map
       end
 
@@ -93,7 +101,28 @@ module FancySearchable
       end
 
       # Value transformations Hash: String => Lambda.
+      def _field_transforms(options = {})
+        nested_transforms = nested_field_transforms.map do |k, n|
+          {
+            k => ->(term) do
+              { nested: { path: n,
+                          # This is garbage, I need to find a way better way to do this.
+                          query: (term.is_a?(Hash) ? { range: { "#{n}.#{k}": term } } : { term: { "#{n}.#{k}": term } })
+                        }
+              }
+            end
+          }
+        end.inject(&:merge)
+
+        field_transforms(options).merge(nested_transforms)
+      end
+
       def field_transforms(_options = {})
+        {}
+      end
+
+      # eg: { width: :image } generates a transform for width => image.width
+      def nested_field_transforms
         {}
       end
 
@@ -126,7 +155,7 @@ module FancySearchable
             allowed_search_fields((access_options || {}))
           ),
           field_aliases:    field_aliases,
-          field_transforms: field_transforms(access_options || {}),
+          field_transforms: _field_transforms(access_options || {}),
           no_downcase:      no_downcase_fields
         )
       end

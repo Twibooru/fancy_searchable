@@ -206,8 +206,8 @@ module FancySearchable
         if field =~ /(.*)\.([gl]te?|eq)$/
           range_field = Regexp.last_match[1].to_sym
           if @date_fields.include?(range_field) ||
-            @int_fields.include?(range_field) ||
-            @float_fields.include?(range_field)
+             @int_fields.include?(range_field) ||
+             @float_fields.include?(range_field)
             return [normalize_field_name(range_field),
                     normalize_val(range_field, val, Regexp.last_match[2])]
           end
