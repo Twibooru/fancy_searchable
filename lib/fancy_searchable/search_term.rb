@@ -105,27 +105,11 @@ module FancySearchable
                 "Field \"#{field_name}\" missing date/time value."
         end
 
-        # Try to parse as a relative date first
-        relative_parsed = RelativeDateParser.parse(val)
-
-        if relative_parsed
-          higher, lower = relative_parsed
-        else
-          # Get and detach timezone. (The timezone here would default to UTC.)
-          timezone = nil
-          val = val.gsub(/(?:\s*[Zz]|[\+\-]\d{2}:\d{2})$/) do |m|
-            timezone = m
-            timezone = nil if %w[z Z].include? timezone
-            ''
-          end
-
-          begin
-            parsed = NillableDateTime.parse(val)
-            lower = parsed.range_start(timezone)
-            higher = parsed.range_end(timezone)
-          rescue StandardError
-            raise SearchParsingError, "Value \"#{val}\" is not recognized as a valid ISO 8601 date/time."
-          end
+        higher, lower = begin
+          # Try to parse as a relative date first
+          RelativeDateParser.parse(val) || NillableDateTime.parse(val).range
+        rescue StandardError
+          raise SearchParsingError, "Value \"#{val}\" is not recognized as a valid ISO 8601 date/time."
         end
 
         case range
