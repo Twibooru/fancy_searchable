@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require_relative 'relative_date_parser'
+require_relative 'nillable_date_time'
 
 module FancySearchable
   class SearchTerm
@@ -48,6 +49,31 @@ module FancySearchable
       end
     end
 
+    def check_val(field_name, val)
+      if @int_fields.include?(field_name)
+        begin
+          return [:int, Integer(val)]
+        rescue StandardError
+          raise SearchParsingError,
+                "Values of \"#{field_name}\" field must be decimal integers; " \
+                "\"#{val}\" is invalid."
+        end
+      elsif @boolean_fields.include? field_name
+        return [:bool, val] if %w[true false].include?(val)
+
+        raise SearchParsingError,
+              "Values of \"#{field_name}\" must be \"true\" or \"false\"; " \
+              "\"#{val}\" is invalid."
+      elsif @ip_fields.include? field_name
+        begin
+          return [:ip, IPAddr.new(val)]
+        rescue StandardError
+          raise SearchParsingError, "Values of \"#{field_name}\" must be IP "\
+              "addresses or CIDR ranges; \"#{val}\" is invalid."
+        end
+      end
+    end
+
     def normalize_val(field_name, val, range = nil)
       if @int_fields.include?(field_name)
         begin
@@ -79,100 +105,35 @@ module FancySearchable
                 "Field \"#{field_name}\" missing date/time value."
         end
 
-        # Convert date into date/time.
-        orig_val = val.clone
+        # Try to parse as a relative date first
+        relative_parsed = RelativeDateParser.parse(val)
 
-        # Has an error occurred?
-        err = false
-
-        # Ordered arguments used to construct time representations.
-        time_data = [nil, nil, nil, nil, nil, nil]
-        target_index = -1
-
-        # Get and detach timezone. (The timezone here would default to UTC.)
-        timezone = nil
-        val.gsub!(/(?:\s*[Zz]|[\+\-]\d{2}:\d{2})$/) do |m|
-          timezone = m
-          timezone = nil if %w[z Z].include? timezone
-          ''
-        end
-
-        sym_table = [
-          /^(\d{4})/,
-          /^\-(\d{2})/,
-          /^\-(\d{2})/,
-          /^(?:\s+|T|t)(\d{2})/,
-          /^:(\d{2})/,
-          /^:(\d{2})/
-        ]
-
-        higher = lower = nil
-
-        sym_table.each do |re|
-          if val.empty?
-            break
-          else
-            target_index += 1
-            if val =~ re
-              time_data[target_index] = Regexp.last_match[1].to_i
-              val.gsub!(re, '')
-            else
-              err = true
-              break
-            end
+        if relative_parsed
+          higher, lower = relative_parsed
+        else
+          # Get and detach timezone. (The timezone here would default to UTC.)
+          timezone = nil
+          val = val.gsub(/(?:\s*[Zz]|[\+\-]\d{2}:\d{2})$/) do |m|
+            timezone = m
+            timezone = nil if %w[z Z].include? timezone
+            ''
           end
-        end
 
-        # Calculate the limits of the required query.
-        unless err
           begin
-            if timezone.nil?
-              lower = Time.utc(*time_data)
-            else
-              time_data << timezone
-              lower = Time.new(*time_data) # rubocop:disable Rails/TimeZone
-            end
-            return { range.to_sym => lower } if %w[lt gte].include? range
+            parsed = NillableDateTime.parse(val)
+            lower = parsed.range_start(timezone)
+            higher = parsed.range_end(timezone)
           rescue StandardError
-            err = true
+            raise SearchParsingError, "Value \"#{val}\" is not recognized as a valid ISO 8601 date/time."
           end
         end
 
-        while !err && higher.nil?
-          time_data[target_index] += 1
-          begin
-            higher = if timezone.nil?
-                       Time.utc(*time_data)
-                     else
-                       Time.new(*time_data) # rubocop:disable Rails/TimeZone
-                     end
-          rescue StandardError
-            time_data[target_index] = if target_index < 3
-                                        # Days and months roll back to 1.
-                                        1
-                                      else
-                                        0
-                                      end
-            target_index -= 1
-            err = true if target_index < 0
-          end
-        end
-
-        if err
-          higher, lower = RelativeDateParser.parse(orig_val)
-
-          if higher
-            return { range.to_sym => lower } if %w[lt gte].include? range
-
-            err = nil # reset error state
-          end
-        end
-
-        if err
-          raise SearchParsingError, "Value \"#{orig_val}\" is not recognized as a valid ISO 8601 date/time."
-        elsif range == 'lte'
+        case range
+        when 'lt', 'gte'
+          return { range.to_sym => lower }
+        when 'lte'
           return { lt: higher }
-        elsif range == 'gt'
+        when 'gt'
           return { gte: higher }
         else
           return { gte: lower, lt: higher }
@@ -206,8 +167,8 @@ module FancySearchable
         if field =~ /(.*)\.([gl]te?|eq)$/
           range_field = Regexp.last_match[1].to_sym
           if @date_fields.include?(range_field) ||
-             @int_fields.include?(range_field) ||
-             @float_fields.include?(range_field)
+            @int_fields.include?(range_field) ||
+            @float_fields.include?(range_field)
             return [normalize_field_name(range_field),
                     normalize_val(range_field, val, Regexp.last_match[2])]
           end
@@ -254,11 +215,12 @@ module FancySearchable
       extra[:boost] = @boost.to_f unless @boost.nil?
 
       if value.is_a? Hash
-        return { range: { field => value.merge(extra) } }
+        { range: { field => value.merge(extra) } }
       elsif !@fuzz.nil?
         # Parse edit distance parameter.
         normalize_term! value, !wildcardable
-        return { fuzzy: { field => { value: value, fuzziness: @fuzz }.merge(extra) } }
+
+        { fuzzy: { field => { value: value, fuzziness: @fuzz }.merge(extra) } }
       elsif wildcardable && (value =~ /(?:^|[^\\])[\*\?]/)
         # '*' and '?' are wildcard characters in the right context;
         # don't unescape them.
@@ -267,25 +229,26 @@ module FancySearchable
         @wildcarded = true
         @ngram_query = false
         return { match_all: {} } if value == '*'
+
         if extra.empty?
-          return { wildcard: { field => value } }
+          { wildcard: { field => value } }
         else
-          return { wildcard: { field => { value: value }.merge(extra) } }
+          { wildcard: { field => { value: value }.merge(extra) } }
         end
       elsif @ngram_query
         if extra.empty?
-          return { match_phrase: { field => value } }
+          { match_phrase: { field => value } }
         else
-          return { match_phrase: {
+          { match_phrase: {
             field => { value: value }.merge(extra)
           } }
         end
       else
         normalize_term!(value, !wildcardable) if value.is_a?(String)
         if extra.empty?
-          return { term: { field => value } }
+          { term: { field => value } }
         else
-          return { term: { field => { value: value }.merge(extra) } }
+          { term: { field => { value: value }.merge(extra) } }
         end
       end
     end

@@ -291,6 +291,7 @@ module FancySearchable
         search_term.fuzz = fuzz
         token_stack.push search_term
       end
+
       token_stack.push(:not_op) if negate
 
       raise SearchParsingError, 'Imbalanced parentheses.' if ops.any? { |x| %i[rparen lparen].include?(x) }
