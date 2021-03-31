@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require_relative 'search_parser'
+require_relative 'parsing/search_parser'
 require 'active_support/concern'
 
 module FancySearchable
@@ -148,7 +148,7 @@ module FancySearchable
 
       def get_search_parser(query, access_options = nil)
         # Invokes the associated SearchParser appropriate to the model.
-        SearchParser.new(
+        Parsing::SearchParser.new(
           query,
           default_field,
           allowed_fields:   get_field_type_map(

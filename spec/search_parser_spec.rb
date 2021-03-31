@@ -1,9 +1,9 @@
 require 'rspec'
-require 'fancy_searchable/search_parser'
+require 'fancy_searchable'
 
-RSpec.describe FancySearchable::SearchParser do
+RSpec.describe FancySearchable::Parsing::SearchParser do
   def tags_parser(expr, options = {})
-    FancySearchable::SearchParser.new(expr, 'namespaced_tags.name', options)
+    FancySearchable::Parsing::SearchParser.new(expr, 'namespaced_tags.name', options)
   end
 
   def parse(expr, options = {})
