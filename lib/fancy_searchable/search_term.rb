@@ -49,31 +49,6 @@ module FancySearchable
       end
     end
 
-    def check_val(field_name, val)
-      if @int_fields.include?(field_name)
-        begin
-          return [:int, Integer(val)]
-        rescue StandardError
-          raise SearchParsingError,
-                "Values of \"#{field_name}\" field must be decimal integers; " \
-                "\"#{val}\" is invalid."
-        end
-      elsif @boolean_fields.include? field_name
-        return [:bool, val] if %w[true false].include?(val)
-
-        raise SearchParsingError,
-              "Values of \"#{field_name}\" must be \"true\" or \"false\"; " \
-              "\"#{val}\" is invalid."
-      elsif @ip_fields.include? field_name
-        begin
-          return [:ip, IPAddr.new(val)]
-        rescue StandardError
-          raise SearchParsingError, "Values of \"#{field_name}\" must be IP "\
-              "addresses or CIDR ranges; \"#{val}\" is invalid."
-        end
-      end
-    end
-
     def normalize_val(field_name, val, range = nil)
       if @int_fields.include?(field_name)
         begin
