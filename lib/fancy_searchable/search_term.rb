@@ -4,6 +4,13 @@ require_relative 'nillable_date_time'
 
 module FancySearchable
   class SearchTerm
+    FUZZ_AND_BOOST_PATTERNS = [
+      /~(?<fuzz>\d+(?:\.\d+)?|\.\d+)\^(?<boost>[\-\+]?\d+(?:\.\d+)?)$/, # Fuzz then boost
+      /\^(?<boost>[\-\+]?\d+(?:\.\d+)?)~(?<fuzz>\d+(?:\.\d+)?|\.\d+)$/, # Boost then fuzz
+      /~(?<fuzz>\d+(?:\.\d+)?|\.\d+)$/, # Just fuzz
+      /\^(?<boost>[\-\+]?\d+(?:\.\d+)?)$/ # Just boost
+    ].freeze
+
     attr_accessor :term, :float_fields, :literal_fields, :int_fields, :ngram_fields, :boost, :fuzz
     attr_reader :wildcarded, :ngram_query
 
@@ -154,6 +161,8 @@ module FancySearchable
     end
 
     def parse
+      setup_fuzz_and_boost
+
       wildcardable = !/^"([^"]|\\")+"$/.match(term)
       @term = @term.slice(1, @term.size - 2) unless wildcardable
 
@@ -222,6 +231,26 @@ module FancySearchable
 
     def to_s
       @term
+    end
+
+    private
+
+    def setup_fuzz_and_boost
+      puts @term
+      FUZZ_AND_BOOST_PATTERNS.each do |pat|
+        found = false
+
+        @term = @term.gsub pat do
+          found = true
+          captures = Regexp.last_match.named_captures
+          @fuzz = captures['fuzz']&.to_f
+          @boost = captures['boost']&.to_f
+
+          ''
+        end
+
+        break if found
+      end
     end
   end
 end

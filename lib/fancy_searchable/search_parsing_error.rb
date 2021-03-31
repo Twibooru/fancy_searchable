@@ -2,4 +2,7 @@
 module FancySearchable
   class SearchParsingError < StandardError
   end
+
+  class SearchLexingError < SearchParsingError
+  end
 end

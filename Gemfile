@@ -14,4 +14,5 @@ end
 group :test, :development do
   gem 'rspec'
   gem 'simplecov'
+  gem 'awesome_print'
 end
