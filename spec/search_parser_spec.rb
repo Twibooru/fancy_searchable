@@ -27,6 +27,28 @@ RSpec.describe FancySearchable::Parsing::SearchParser do
     end
   end
 
+  describe 'errors' do
+    it 'should validate integer fields' do
+      expect { tags_parser('score:potato', allowed_fields: { integer: [:score] }) }.to raise_error FancySearchable::Parsing::SearchParsingError
+    end
+
+    it 'should validate float fields' do
+      expect { tags_parser('score:potato', allowed_fields: { float: [:score] }) }.to raise_error FancySearchable::Parsing::SearchParsingError
+    end
+
+    it 'should validate boolean fields' do
+      expect { tags_parser('is_cool:maybe', allowed_fields: { boolean: [:is_cool] }) }.to raise_error FancySearchable::Parsing::SearchParsingError
+    end
+
+    it 'should validate date fields' do
+      expect { tags_parser('created_at:not a date', allowed_fields: { date: [:created_at] }) }.to raise_error FancySearchable::Parsing::SearchParsingError
+    end
+
+    it 'should validate ip fields' do
+      expect { tags_parser('ip:definitely.not.an.ip', allowed_fields: { ip: [:ip] }) }.to raise_error FancySearchable::Parsing::SearchParsingError
+    end
+  end
+
   describe 'escaping' do
     it 'should support escaping characters with backslashes' do
       parsed = parse('\"pinkie\: the \pie\" \(\*cosplayer\*\)')
