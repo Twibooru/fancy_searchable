@@ -5,12 +5,7 @@ require_relative 'dates/nillable_date_time'
 module FancySearchable
   module Parsing
     class SearchTerm
-      FUZZ_AND_BOOST_PATTERNS = [
-        /~(?<fuzz>\d+(?:\.\d+)?|\.\d+)\^(?<boost>[\-\+]?\d+(?:\.\d+)?)$/, # Fuzz then boost
-        /\^(?<boost>[\-\+]?\d+(?:\.\d+)?)~(?<fuzz>\d+(?:\.\d+)?|\.\d+)$/, # Boost then fuzz
-        /~(?<fuzz>\d+(?:\.\d+)?|\.\d+)$/, # Just fuzz
-        /\^(?<boost>[\-\+]?\d+(?:\.\d+)?)$/ # Just boost
-      ].freeze
+      FUZZ_OR_BOOST_PATTERN = /(?:~(?<fuzz>\d+(?:\.\d+)?|\.\d+))|(?:\^(?<boost>[\-+]?\d+(?:\.\d+)?))$/.freeze
 
       attr_accessor :term, :float_fields, :literal_fields, :int_fields, :ngram_fields, :boost, :fuzz
       attr_reader :wildcarded, :ngram_query
@@ -237,20 +232,17 @@ module FancySearchable
       private
 
       def setup_fuzz_and_boost
-        puts @term
-        FUZZ_AND_BOOST_PATTERNS.each do |pat|
-          found = false
-
-          @term = @term.gsub pat do
-            found = true
+        loop do
+          matched = false
+          @term = @term.gsub FUZZ_OR_BOOST_PATTERN do
+            matched = true
             captures = Regexp.last_match.named_captures
-            @fuzz = captures['fuzz']&.to_f
-            @boost = captures['boost']&.to_f
-
+            @fuzz  = captures['fuzz'].to_f  if captures['fuzz']
+            @boost = captures['boost'].to_f if captures['boost']
             ''
           end
 
-          break if found
+          break unless matched
         end
       end
     end

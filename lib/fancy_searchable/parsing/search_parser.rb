@@ -121,7 +121,7 @@ module FancySearchable
 
       def new_search_term(term_str)
         SearchTerm.new(
-          term_str.lstrip,
+          term_str.strip,
           @default_field,
           allowed_fields: @allowed_fields,
           aliases:        @field_aliases,

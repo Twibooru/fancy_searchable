@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require_relative 'search_parsing_error'
 require_relative '../core_ext/enumerable'
 
@@ -6,15 +7,15 @@ module FancySearchable
     class SearchLexer
       TOKEN_LIST = [
         [:quoted_lit, /^\s*"(?:(?:[^"]|\\")+)"/],
-        [:lparen, /^\s*\(\s*/],
-        [:rparen, /^\s*\)\s*/],
-        [:and_op, /^\s*(?:&&|AND)\s+/],
-        [:and_op, /^\s*,\s*/],
-        [:or_op, /^\s*(?:\|\||OR)\s+/],
-        [:not_op, /^\s*NOT(?:\s+|(?>\())/],
-        [:not_op, /^\s*[!\-]\s*/],
-        [:space, /^\s+/],
-        [:word, /^(?:[^\s,()]|\\[\s,()])+/]
+        [:lparen,     /^\(/],
+        [:rparen,     /^\)/],
+        [:and_op,     /^(?:&&|AND|,)/],
+        # [:and_op,     /^,/],
+        [:or_op,      /^(?:\|\||OR)/],
+        [:not_op,     /^NOT(?:\s+|(?>\())/], # TODO: What?
+        [:not_op,     /^[!\-]/],
+        [:space,      /^\s+/],
+        [:word,       /^(?:[^\s,()]|\\[\s,()])+/]
       ].freeze
 
       def self.lex(search_str)
@@ -46,7 +47,7 @@ module FancySearchable
             symbol == :rparen && lparen_in_term == 0)
             if search_term
               # Push to stack.
-              token_stack.push search_term
+              token_stack.push search_term.strip
               # Reset term and options data.
               search_term = nil
               lparen_in_term = 0
@@ -123,7 +124,7 @@ module FancySearchable
 
         # Append final tokens to the stack, starting with the search term.
         if search_term
-          token_stack.push search_term
+          token_stack.push search_term.strip
         end
 
         token_stack.push(:not_op) if negate
