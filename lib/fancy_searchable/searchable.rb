@@ -40,7 +40,10 @@ module FancySearchable
         if sort[:_random]
           @queries.push(function_score: {
             query:        { match_all: {} },
-            random_score: { seed: sort[:random_seed] || rand(4_294_967_296) },
+            random_score: {
+              seed: sort[:random_seed] || rand(4_294_967_296),
+              field: sort[:random_field] || :id
+            },
             boost_mode:   :replace
           })
           @sorts.unshift(_score: sort[:_random])
