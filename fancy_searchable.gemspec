@@ -29,8 +29,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
   spec.license = 'AGPL3'
 
-  spec.add_dependency 'activesupport', '~> 6.0'
-  spec.add_dependency 'elasticsearch-model', '~> 7.2'
+  spec.add_dependency 'activesupport', '~> 7.0'
+  spec.add_dependency 'elasticsearch-model', '~> 7.2.1'
 
   # Uncomment to register a new dependency of your gem
   # spec.add_dependency "example-gem", "~> 1.0"
