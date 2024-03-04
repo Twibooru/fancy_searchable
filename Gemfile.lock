@@ -1,9 +1,9 @@
 PATH
   remote: .
   specs:
-    fancy_searchable (0.2.4)
-      activesupport (~> 7.0)
-      elasticsearch-model (~> 7.2.1)
+    fancy_searchable (0.2.5)
+      activesupport (>= 7.0)
+      elasticsearch-model (>= 7.2.1)
 
 GEM
   remote: https://rubygems.org/
