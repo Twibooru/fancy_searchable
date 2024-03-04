@@ -185,7 +185,7 @@ module FancySearchable
           normalize_term! value, !wildcardable
 
           { fuzzy: { field => { value: value, fuzziness: @fuzz }.merge(extra) } }
-        elsif wildcardable && (value =~ /(?:^|[^\\])[\*\?]/)
+        elsif wildcardable && value.is_a?(String) && (value =~ /(?:^|[^\\])[\*\?]/)
           # '*' and '?' are wildcard characters in the right context;
           # don't unescape them.
           value.gsub!(/\\([^\*\?])/, '\1')
